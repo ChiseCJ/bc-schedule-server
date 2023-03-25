@@ -1,10 +1,7 @@
 {
   "compilerOptions": {
-    "target": "ES6",
-    "module": "CommonJS",
-    "lib": [
-      "ESNext"
-    ],
+    "target": "ES2015",
+    "module": "ES2015",
     "declaration": true,
     "removeComments": true,
     "importHelpers": true,
@@ -14,11 +11,9 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "baseUrl": "./"
   },
   "include": [
     "lib",
-    "src/*"
   ],
   "exclude": [
     "node_modules",
