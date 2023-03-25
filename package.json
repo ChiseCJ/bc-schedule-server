@@ -9,10 +9,13 @@
   ],
   "author": "ChiseCC",
   "license": "MIT",
-  "repository": "",
+  "homepage": "https://github.com/ChiseCJ/bc-schedule-server#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ikexing-cn/xxl-job-nodejs.git"
+  },
   "files": [
-    "dist",
-    "LICENSE"
+    "dist"
   ],
   "main": "dist/esm/index.js",
   "module": "dist/esm/index.js",

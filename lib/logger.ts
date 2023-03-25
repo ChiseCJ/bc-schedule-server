@@ -23,6 +23,7 @@ export class Logger {
 
     const logger = createLogger({
       format: combine(
+        format.json(),
         timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
         logFormat
       ),

@@ -1,11 +1,9 @@
-import { ExposeLogger } from '../interface'
-
-export function errorCapturer(logger: ExposeLogger) {
+export function errorCapturer() {
   process.on('uncaughtException', (error: any) => {
-    logger.error(`uncaughtException: ${error}`)
+    console.error('uncaughtException:', error)
   })
 
   process.on('unhandledRejection', (reason: any, promise) => {
-    logger.error('unhandledRejection:', promise, 'reason:', reason)
+    console.error('unhandledRejection:', promise, 'reason:', reason)
   })
 }

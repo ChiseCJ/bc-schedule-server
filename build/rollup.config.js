@@ -62,5 +62,5 @@ export default {
     // terser(),
     ...pluginsWithServe
   ],
-  external: ['os', 'fs', 'readline', 'path']
+  external: ['os', 'fs', 'readline', 'path', 'koa', 'koa-router', 'koa-body', 'urllib', 'winston', 'winston-daily-rotate-file']
 };

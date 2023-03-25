@@ -95,7 +95,7 @@ export class BcScheduleServer {
   }
 
   private expendAndMiddleware(app: Koa) {
-    errorCapturer(this.logger)
+    errorCapturer()
 
     const { opLog = false } = this.options
     app.use(koaBody())
