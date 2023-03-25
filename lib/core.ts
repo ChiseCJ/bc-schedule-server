@@ -207,6 +207,6 @@ export class BcScheduleServer {
     const handleMsg = error ? error.message || error.toString()
       : result ? (isObject(result) ? JSON.stringify(result) : (result).toString()) : 'execute success'
 
-    request(url, { logId, handleCode, handleMsg })
+    request(url, [{ logId, handleCode, handleMsg }])
   }
 }

@@ -1,8 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES6",
-    "module": "ESNext",
-    "lib": ["ESNext"],
+    "module": "CommonJS",
+    "lib": [
+      "ESNext"
+    ],
     "declaration": true,
     "removeComments": true,
     "importHelpers": true,
@@ -12,7 +14,14 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "baseUrl": "./"
   },
-  "include": ["lib"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "lib",
+    "src/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

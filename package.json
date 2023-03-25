@@ -12,16 +12,17 @@
   "homepage": "https://github.com/ChiseCJ/bc-schedule-server#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ikexing-cn/xxl-job-nodejs.git"
+    "url": "git+https://github.com/ChiseCJ/bc-schedule-server.git"
   },
   "files": [
     "dist"
   ],
-  "main": "dist/esm/index.js",
-  "module": "dist/esm/index.js",
-  "types": "dist/esm/index.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "rollup -c build/rollup.config.js",
+    "dev": "nodemon index.ts",
     "check": "tsc --noEmit"
   },
   "peerDependencies": {},
@@ -36,11 +37,13 @@
     "@types/koa": "^2.13.5",
     "@types/koa-router": "^7.4.4",
     "cross-env": "^7.0.3",
+    "nodemon": "2.0.22",
     "rollup": "^2.77.2",
     "rollup-plugin-delete": "^2.0.0",
     "rollup-plugin-livereload": "^2.0.5",
     "rollup-plugin-serve": "^2.0.0",
     "rollup-plugin-typescript2": "^0.32.1",
+    "ts-node": "10.9.1",
     "tslib": "^2.4.0",
     "typescript": "4.6.2"
   },

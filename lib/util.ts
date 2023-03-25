@@ -53,8 +53,8 @@ export function getLocalIP() {
   return '0.0.0.0'
 }
 
-export function request(url: string, data: { logId: number, handleCode: number, handleMsg: string }) {
-  return urllib.request(url, { method: "POST", contentType: "json", data: [data] })
+export function request(url: string, data: any) {
+  return urllib.request(url, { method: "POST", contentType: "json", dataType: 'json', data })
 }
 
 export function sleep(wait: number) {
