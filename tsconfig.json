@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "ESNext",
+    "lib": ["ESNext"],
+    "declaration": true,
+    "rootDir": "lib",
+    "removeComments": true,
+    // "noEmit": true,
+    "importHelpers": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noImplicitReturns": true,
+    "moduleResolution": "node",
+    "baseUrl": "./",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["lib"],
+  "exclude": ["node_modules", "dist"]
+}
