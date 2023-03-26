@@ -9,6 +9,8 @@ import pkg from '../package.json';
 
 const moduleDir = path.dirname(pkg.module);
 
+// console.log(path.resolve(__dirname, '../tsconfig.build.json'));
+
 export default {
   input: 'lib/index.ts',
   output: [
@@ -22,7 +24,7 @@ export default {
     clear({ targets: 'dist/*' }),
     json(),
     commonjs(),
-    typescript(),
+    typescript({ tsconfig: path.resolve(__dirname, '../tsconfig.build.json') }),
   ],
   external: ['os', 'fs', 'readline', 'path', 'koa', 'koa-router', 'koa-body', 'urllib', 'winston', 'winston-daily-rotate-file']
 };

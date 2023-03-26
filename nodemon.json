@@ -5,7 +5,7 @@
     "node_modules/*"
   ],
   "watch": [
-    "index.ts"
+    "src/*"
   ],
   "quiet": true,
   "verbose": true,

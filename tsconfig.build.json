@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "ES6",
+    "declaration": true,
+    "removeComments": true,
+    "importHelpers": false,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noImplicitReturns": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+  },
+  "include": [
+    "lib",
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}
