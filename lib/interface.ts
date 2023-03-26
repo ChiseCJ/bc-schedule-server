@@ -2,10 +2,9 @@ import { LeveledLogMethod } from 'winston'
 
 export interface IBcScheduleType {
   port: number
-  localLog?: boolean | ILoggerType
+  logOption?: ILoggerType
   scheduleCenterUrl: string
   route?: string
-  opLog?: boolean
   koaOptions?: any
   callback?: (port: number) => {}
 }
@@ -40,8 +39,8 @@ export type ITaskItem = (params: IParamsType, logger: ExposeLogger) => any
 export type ITaskList = ITaskItem[]
 
 export interface ILoggerType {
-  logName: string
-  logPath: string
+  opLog?: boolean
+  logPath?: string
 }
 
 export interface IReadLogType {

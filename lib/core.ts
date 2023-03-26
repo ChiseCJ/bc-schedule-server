@@ -5,30 +5,21 @@ import Router from 'koa-router'
 import { IBcScheduleType, IParamsType, ICallbackType, ITaskItem, ITaskList, IReadLogType, ExposeLogger } from './interface'
 import { isArray, getLocalIP, isFunction, isObject, request } from './util'
 import { errorCapturer, opLogger } from './middleware'
-import { Logger } from './logger'
+import { generateLogger } from './logger'
 
 const defaultOptions: Omit<IBcScheduleType, 'port' | 'scheduleCenterUrl'> = {
-  opLog: false,
   route: '',
-  localLog: {
-    logName: 'xxl-job',
+  logOption: {
+    opLog: false,
     logPath: 'logs',
   },
-}
-
-const fakeLogger: {
-  info: () => any
-  error: () => any
-} = {
-  info: console.info.bind(console),
-  error: console.error.bind(console),
 }
 
 export class BcScheduleServer {
   app!: Koa
   router!: Router
   taskList!: string[]
-  logger: ExposeLogger = fakeLogger
+  logger!: ExposeLogger
   private runningTaskList!: Set<number>
   private taskCacheList!: Map<string, ITaskItem>
   private options!: IBcScheduleType
@@ -45,12 +36,7 @@ export class BcScheduleServer {
     this.taskList = []
     this.runningTaskList = new Set()
 
-    if (typeof this.options.localLog === 'object') {
-      const logInstance = new Logger(this.options.localLog)
-      this.readLog = logInstance.readLocalLogById.bind(logInstance)
-      this.logger = logInstance.create()
-    }
-
+    this.genLogger()
     this.start()
   }
 
@@ -70,6 +56,14 @@ export class BcScheduleServer {
       }
     }
     return this.taskList
+  }
+
+  private genLogger() {
+    if (typeof this.options.logOption === 'object') {
+      const { readLog, logger } = generateLogger(this.options.logOption)
+      this.readLog = readLog
+      this.logger = logger
+    }
   }
 
   private start() {
@@ -97,7 +91,7 @@ export class BcScheduleServer {
   private expendAndMiddleware(app: Koa) {
     errorCapturer()
 
-    const { opLog = false } = this.options
+    const { opLog = false } = this.options.logOption!
     app.use(koaBody())
     app.use(opLogger(opLog, this.logger))
   }
@@ -126,7 +120,7 @@ export class BcScheduleServer {
       const { body } = ctx.request
       let resultContent = { logContent: 'local log is not used', fromLineNum: 1, toLineNum: 2, end: true }
 
-      if (body && typeof this.options.localLog === 'object') {
+      if (body) {
         const { logId } = body as IReadLogType
         const { findFlag, endFlag, content, fromLineNum, lineNum } = await this.readLog(body)
         if (!findFlag) {
@@ -181,9 +175,9 @@ export class BcScheduleServer {
     ctx.body = { code: 200, msg: 'success run task' }
   }
 
-  private async execTask(executorHandler: string, params: IParamsType) {
+  private async execTask(executorHandler: string, executorParams: IParamsType) {
     const task = this.taskCacheList.get(executorHandler)
-    return task!(params, this.logger)
+    return task!(executorParams, this.logger)
   }
 
   private finishTask(options: { jobId: number, logId: number, result?: any, error?: Error }) {

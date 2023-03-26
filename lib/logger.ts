@@ -5,10 +5,26 @@ import readline from 'readline'
 import { createLogger, format } from 'winston'
 import DailyRotateFile from 'winston-daily-rotate-file'
 import { ExposeLogger, ILoggerType, IReadLogType } from './interface'
+import { isLocal } from './util'
 
 const { combine, timestamp, printf } = format
 const logFormat = printf(({ level, message, timestamp }) => `${timestamp} [XXL-JOB] ${level}: ${message}`)
 const MAX_LINE = 10
+
+const fakeLogger: {
+  info: () => any
+  error: () => any
+} = {
+  info: console.info.bind(console),
+  error: console.error.bind(console),
+}
+
+const fakeReadLog = () => ({ findFlag: true, endFlag: true, content: 'is local fake data', fromLineNum: 1, lineNum: 2 })
+
+/**
+ * @expose 对外的 logger
+ */
+export let logger: ExposeLogger = fakeLogger
 
 export class Logger {
   private options: ILoggerType
@@ -18,8 +34,8 @@ export class Logger {
   }
 
   create() {
-    const { logName, logPath } = this.options
-    const filename = path.resolve(logPath, `./%DATE%-${logName}.log`)
+    const { logPath = 'logs' } = this.options
+    const filename = path.resolve(logPath, `./%DATE%-xxl-job.log`)
 
     const logger = createLogger({
       format: combine(
@@ -41,8 +57,8 @@ export class Logger {
 
   readLocalLogById({ logId, logDateTim, fromLineNum }: IReadLogType) {
     return new Promise(resolve => {
-      const { logName, logPath } = this.options
-      const logFile = path.resolve(logPath, `./${formatDate(logDateTim)}-${logName}.log`)
+      const { logPath = 'logs' } = this.options
+      const logFile = path.resolve(logPath, `./${formatDate(logDateTim)}-xxl-job.log`)
 
       if (!fs.existsSync(logFile)) {
         resolve({ findFlag: false, endFlag: true })
@@ -91,4 +107,19 @@ export class Logger {
 function formatDate(timestamp: number) {
   const d = new Date(timestamp)
   return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '00')}-${(d.getDate()).toString().padStart(2, '00')}`
+}
+
+export function generateLogger(options: ILoggerType) {
+  if (isLocal) {
+    return {
+      readLog: fakeReadLog,
+      logger: fakeLogger
+    }
+  }
+
+  const logInstance = new Logger(options)
+  return {
+    readLog: logInstance.readLocalLogById.bind(logInstance),
+    logger: logger = logInstance.create()
+  }
 }
