@@ -2,7 +2,7 @@
 import Koa, { Context, Next } from 'koa'
 import koaBody from 'koa-body'
 import Router from 'koa-router'
-import { IBcScheduleType, IParamsType, ICallbackType, ITaskItem, ITaskList, IReadLogType, ExposeLogger } from './interface'
+import { IBcScheduleType, IExecutorParams, ICallbackType, ITaskItem, ITaskList, IReadLogType, ExposeLogger } from './interface'
 import { isArray, getLocalIP, isFunction, isObject, request } from './util'
 import { errorCapturer, opLogger } from './middleware'
 import { generateLogger } from './logger'
@@ -145,7 +145,7 @@ export class BcScheduleServer {
   private taskCheck(ctx: Context, next: Next): Promise<any> | void {
     const { body } = ctx.request
     if (body && body?.executorHandler) {
-      const { executorHandler, jobId } = ctx.request.body as IParamsType
+      const { executorHandler, jobId } = ctx.request.body as IExecutorParams
 
       if (!this.taskList.includes(executorHandler)) {
         ctx.status = 200
@@ -163,7 +163,7 @@ export class BcScheduleServer {
   }
 
   private async taskHandle(ctx: Context) {
-    const { jobId, logId, executorHandler } = ctx.request.body as IParamsType
+    const { jobId, logId, executorHandler } = ctx.request.body as IExecutorParams
 
     this.logger.info(`--- Job Task: ${jobId} is running: ${logId} ---`)
     this.runningTaskList.add(jobId)
@@ -175,7 +175,7 @@ export class BcScheduleServer {
     ctx.body = { code: 200, msg: 'success run task' }
   }
 
-  private async execTask(executorHandler: string, executorParams: IParamsType) {
+  private async execTask(executorHandler: string, executorParams: IExecutorParams) {
     const task = this.taskCacheList.get(executorHandler)
     return task!(executorParams, this.logger)
   }

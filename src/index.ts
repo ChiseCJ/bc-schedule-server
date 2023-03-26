@@ -1,4 +1,5 @@
-import { BcScheduleServer, logger } from '../dist';
+import { BcScheduleServer } from '../dist';
+import { task } from './task';
 
 const schedule = new BcScheduleServer({
   port: 9501, logOption: {
@@ -6,7 +7,4 @@ const schedule = new BcScheduleServer({
     // logPath: 'logs/abc'
   }, scheduleCenterUrl: ''
 })
-schedule.registerTask([function test(params) {
-  // console.log('\x1b[3m\x1b[34m \nccLog ——> [params] \x1b[0m', params)
-  logger.info(params)
-}])
+schedule.registerTask(task)

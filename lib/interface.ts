@@ -9,7 +9,7 @@ export interface IBcScheduleType {
   callback?: (port: number) => {}
 }
 
-export interface IParamsType {
+export interface IExecutorParams {
   jobId: number
   executorHandler: string
   executorParams: string
@@ -35,7 +35,7 @@ export interface ISendResponseData {
   msg?: string
 }
 
-export type ITaskItem = (params: IParamsType, logger: ExposeLogger) => any
+export type ITaskItem = (params: IExecutorParams, logger: ExposeLogger) => any
 export type ITaskList = ITaskItem[]
 
 export interface ILoggerType {
