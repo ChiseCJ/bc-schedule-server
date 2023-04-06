@@ -2,10 +2,10 @@
 import Koa, { Context, Next } from 'koa'
 import koaBody from 'koa-body'
 import Router from 'koa-router'
-import { IBcScheduleType, IExecutorParams, ICallbackType, ITaskItem, ITaskList, IReadLogType, ExposeLogger } from './interface'
+import { IBcScheduleType, IExecutorParams, ICallbackType, ITaskItem, ITaskList, IReadLogType, ExposeLogger } from './types'
 import { isArray, getLocalIP, isFunction, isObject, request } from './util'
 import { errorCapturer, opLogger } from './middleware'
-import { generateLogger } from './logger'
+import { generateLogger, Logger } from './logger'
 
 const defaultOptions: Omit<IBcScheduleType, 'port' | 'scheduleCenterUrl'> = {
   route: '',
@@ -24,6 +24,7 @@ export class BcScheduleServer {
   private taskCacheList!: Map<string, ITaskItem>
   private options!: IBcScheduleType
   private readLog!: Function
+  private logInstance!: Logger
 
   constructor(options: IBcScheduleType) {
     if (!options || options.port == null) {
@@ -60,7 +61,8 @@ export class BcScheduleServer {
 
   private genLogger() {
     if (typeof this.options.logOption === 'object') {
-      const { readLog, logger } = generateLogger(this.options.logOption)
+      const { logInstance, readLog, logger } = generateLogger(this.options.logOption)
+      this.logInstance = logInstance
       this.readLog = readLog
       this.logger = logger
     }
@@ -163,8 +165,9 @@ export class BcScheduleServer {
   }
 
   private async taskHandle(ctx: Context) {
-    const { jobId, logId, executorHandler } = ctx.request.body as IExecutorParams
+    const { jobId, logId, logDateTime, executorHandler } = ctx.request.body as IExecutorParams
 
+    this.logInstance.addLogFile(logId, logDateTime)
     this.logger.info(`--- Job Task: ${jobId} is running: ${logId} ---`)
     this.runningTaskList.add(jobId)
     this.execTask(executorHandler, ctx.request.body)

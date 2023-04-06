@@ -26,5 +26,5 @@ export default {
     commonjs(),
     typescript({ tsconfig: path.resolve(__dirname, '../tsconfig.build.json') }),
   ],
-  external: ['os', 'fs', 'readline', 'path', 'koa', 'koa-router', 'koa-body', 'urllib', 'winston', 'winston-daily-rotate-file']
+  external: ['os', 'fs', 'readline', 'path', 'koa', 'koa-router', 'koa-body', 'urllib', 'winston', 'winston-daily-rotate-file', 'safe-stable-stringify']
 };

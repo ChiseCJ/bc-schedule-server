@@ -2,61 +2,66 @@
 import path from 'path'
 import fs from 'fs'
 import readline from 'readline'
-import { createLogger, format } from 'winston'
-import DailyRotateFile from 'winston-daily-rotate-file'
-import { ExposeLogger, ILoggerType, IReadLogType } from './interface'
+import jsonStringify from 'safe-stable-stringify'
+import { createLogger, format, transports, Logger as WinstonLogger } from 'winston'
+// import DailyRotateFile from 'winston-daily-rotate-file'
+import { ExposeLogger, ILoggerType, IReadLogType } from './types'
 import { isLocal } from './util'
 
-const { combine, timestamp, printf } = format
-const logFormat = printf(({ level, message, timestamp }) => `${timestamp} [XXL-JOB] ${level}: ${message}`)
 const MAX_LINE = 10
 
-const fakeLogger: {
-  info: () => any
-  error: () => any
-} = {
-  info: console.info.bind(console),
-  error: console.error.bind(console),
-}
+const logFormat = format.printf(params => {
+  const { level, message, timestamp, stack } = params
+  return `${timestamp} [XXL-JOB] ${level}:${jsonStringify(message, (_, value: any) => ['bigint', 'symbol'].includes(typeof value) ? value.toString() : value)} ${stack || ''}`
+})
 
-const fakeReadLog = () => ({ findFlag: true, endFlag: true, content: 'is local fake data', fromLineNum: 1, lineNum: 2 })
+const formatOptions = {
+  local: [format.json(), format.errors(), format.colorize({ all: true }), format.simple()],
+  prod: [format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), logFormat]
+}
 
 /**
  * @expose 对外的 logger
  */
-export let logger: ExposeLogger = fakeLogger
+export let logger: ExposeLogger
 
 export class Logger {
   private options: ILoggerType
+  private loggerRaw!: WinstonLogger
 
   constructor(options: ILoggerType) {
     this.options = options
+
   }
 
   create() {
-    const { logPath = 'logs' } = this.options
-    const filename = path.resolve(logPath, `./%DATE%-xxl-job.log`)
-
     const logger = createLogger({
-      format: combine(
-        format.json(),
-        timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-        logFormat
-      ),
+      format: format.combine(...formatOptions[isLocal ? 'local' : 'prod']),
       transports: [
-        new DailyRotateFile({
-          filename,
-          datePattern: `YYYY-MM-DD`,
-          zippedArchive: true,
-        }),
+        // 生产环境不在 stdout 输出
+        new transports.Console({ level: 'debug', silent: !isLocal })
       ],
     })
+    this.loggerRaw = logger
 
     return { info: logger.info.bind(logger), error: logger.error.bind(logger) } as ExposeLogger
   }
 
+  addLogFile(logId: number, logDateTime: number) {
+    const { logPath = 'logs' } = this.options
+    const filename = path.resolve(logPath, `./${formatDate(logDateTime)}-xxl-job-${logId}.log`)
+    if (!isLocal) {
+      this.loggerRaw.add(new transports.File({ filename, handleExceptions: true, handleRejections: true }))
+    }
+  }
+
   readLocalLogById({ logId, logDateTim, fromLineNum }: IReadLogType) {
     return new Promise(resolve => {
+      if (isLocal) {
+        return resolve({ findFlag: true, endFlag: true, content: 'is local fake data', fromLineNum: 1, lineNum: 2 })
+      }
+
+
       const { logPath = 'logs' } = this.options
       const logFile = path.resolve(logPath, `./${formatDate(logDateTim)}-xxl-job.log`)
 
@@ -110,15 +115,9 @@ function formatDate(timestamp: number) {
 }
 
 export function generateLogger(options: ILoggerType) {
-  if (isLocal) {
-    return {
-      readLog: fakeReadLog,
-      logger: fakeLogger
-    }
-  }
-
   const logInstance = new Logger(options)
   return {
+    logInstance,
     readLog: logInstance.readLocalLogById.bind(logInstance),
     logger: logger = logInstance.create()
   }

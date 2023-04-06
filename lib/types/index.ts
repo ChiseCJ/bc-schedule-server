@@ -1,5 +1,10 @@
 import { LeveledLogMethod } from 'winston'
 
+export interface ILoggerType {
+  opLog?: boolean
+  logPath?: string
+}
+
 export interface IBcScheduleType {
   port: number
   logOption?: ILoggerType
@@ -16,7 +21,7 @@ export interface IExecutorParams {
   executorBlockStrategy: string
   executorTimeout: number
   logId: number
-  logDateTIme: number
+  logDateTime: number
   glueType: string
   glueSource: string
   glueUpdatetime: number
@@ -37,11 +42,6 @@ export interface ISendResponseData {
 
 export type ITaskItem = (params: IExecutorParams, logger: ExposeLogger) => any
 export type ITaskList = ITaskItem[]
-
-export interface ILoggerType {
-  opLog?: boolean
-  logPath?: string
-}
 
 export interface IReadLogType {
   logId: number,

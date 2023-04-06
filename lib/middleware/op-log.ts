@@ -1,5 +1,5 @@
 import { Context, Next } from 'koa'
-import { ExposeLogger } from '../interface'
+import { ExposeLogger } from '../types'
 
 export function opLogger(opLog: boolean, logger: ExposeLogger) {
   return function exec(ctx: Context, next: Next) {
