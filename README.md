@@ -8,7 +8,7 @@
   - 暂不支持任务超时配置及单次任务的终止动作
 
 ### 其他
-  - 本地开发时建议配置 NODE_ENV=local 这样就不会启用 log 文件日志，而是使用 console.info/error 在控制台输出
+  - 本地开发时建议配置 NODE_ENV=local 这样就不会启用 log 文件日志，而是使用在控制台输出
 
 ### 配置参数
 ```
@@ -24,7 +24,7 @@
 }
 
 // 基本使用方式
-import { BcScheduleServer, logger } form 'bc-schedule-server'
+import { BcScheduleServer } form 'bc-schedule-server'
 
 const schedule = new BcScheduleServer({ 
   port: 9501,
@@ -33,9 +33,9 @@ const schedule = new BcScheduleServer({
 
 // 注册待调用的定时任务
 schedule.registerTask([
-  function fn1(xxlJobParams) {
+  function fn1(logger, xxlJobParams) {
     logger.info('balabal')
   },
-  async function fn2(xxlJobParams) {},
+  async function fn2(logger, xxlJobParams) {},
 ])
 ```
