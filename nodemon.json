@@ -9,5 +9,8 @@
   ],
   "quiet": true,
   "verbose": true,
-  "delay": 1800
+  "delay": 1800,
+  "env": {
+    "NODE_ENV": "local"
+  }
 }

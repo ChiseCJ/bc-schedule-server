@@ -58,3 +58,8 @@ export function request(url: string, data: any) {
 export function sleep(wait: number) {
   return new Promise(resolve => setTimeout(resolve, wait))
 }
+
+export function formatDate(timestamp: number) {
+  const d = new Date(timestamp)
+  return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '00')}-${(d.getDate()).toString().padStart(2, '00')}`
+}

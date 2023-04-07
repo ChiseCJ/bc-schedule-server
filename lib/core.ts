@@ -3,9 +3,9 @@ import Koa, { Context, Next } from 'koa'
 import koaBody from 'koa-body'
 import Router from 'koa-router'
 import { IBcScheduleType, IExecutorParams, ICallbackType, ITaskItem, ITaskList, IReadLogType, ExposeLogger } from './types'
-import { isArray, getLocalIP, isFunction, isObject, request } from './util'
-import { errorCapturer, opLogger } from './middleware'
-import { generateLogger, Logger } from './logger'
+import { isArray, getLocalIP, isFunction, formatDate, isObject, request } from './util'
+import { opLogger } from './middleware'
+import { WLogger, readLocalLogById } from './logger'
 
 const defaultOptions: Omit<IBcScheduleType, 'port' | 'scheduleCenterUrl'> = {
   route: '',
@@ -19,12 +19,10 @@ export class BcScheduleServer {
   app!: Koa
   router!: Router
   taskList!: string[]
-  logger!: ExposeLogger
   private runningTaskList!: Set<number>
   private taskCacheList!: Map<string, ITaskItem>
   private options!: IBcScheduleType
-  private readLog!: Function
-  private logInstance!: Logger
+  private logInstance!: WLogger
 
   constructor(options: IBcScheduleType) {
     if (!options || options.port == null) {
@@ -37,7 +35,7 @@ export class BcScheduleServer {
     this.taskList = []
     this.runningTaskList = new Set()
 
-    this.genLogger()
+    this.logInstance = new WLogger(this.options.logOption || {})
     this.start()
   }
 
@@ -57,15 +55,6 @@ export class BcScheduleServer {
       }
     }
     return this.taskList
-  }
-
-  private genLogger() {
-    if (typeof this.options.logOption === 'object') {
-      const { logInstance, readLog, logger } = generateLogger(this.options.logOption)
-      this.logInstance = logInstance
-      this.readLog = readLog
-      this.logger = logger
-    }
   }
 
   private start() {
@@ -91,11 +80,9 @@ export class BcScheduleServer {
   }
 
   private expendAndMiddleware(app: Koa) {
-    errorCapturer()
-
     const { opLog = false } = this.options.logOption!
     app.use(koaBody())
-    app.use(opLogger(opLog, this.logger))
+    app.use(opLogger(opLog, this.logInstance))
   }
 
   private addRoutes() {
@@ -124,11 +111,11 @@ export class BcScheduleServer {
 
       if (body) {
         const { logId } = body as IReadLogType
-        const { findFlag, endFlag, content, fromLineNum, lineNum } = await this.readLog(body)
+        const { findFlag, endFlag, content, fromLineNum, lineNum } = await readLocalLogById(this.logInstance)(body)
         if (!findFlag) {
           resultContent = { logContent: `log not found, logId: ${logId}`, fromLineNum: 1, toLineNum: 2, end: false }
         } else {
-          resultContent = { logContent: content, fromLineNum, toLineNum: lineNum, end: endFlag }
+          resultContent = { logContent: content || '', fromLineNum: fromLineNum || 1, toLineNum: lineNum || 2, end: endFlag }
         }
       }
 
@@ -166,33 +153,34 @@ export class BcScheduleServer {
 
   private async taskHandle(ctx: Context) {
     const { jobId, logId, logDateTime, executorHandler } = ctx.request.body as IExecutorParams
+    // 每次请求都生成一个新的 winston 实例
+    const logger = this.logInstance.create({ fileName: `${formatDate(logDateTime)}-xxl-job-${logId}` })
 
-    this.logInstance.addLogFile(logId, logDateTime)
-    this.logger.info(`--- Job Task: ${jobId} is running: ${logId} ---`)
+    logger.info(`--- Job Task: ${jobId} is running: ${logId} ---`)
     this.runningTaskList.add(jobId)
-    this.execTask(executorHandler, ctx.request.body)
-      .then(result => this.finishTask({ jobId, logId, result }))
-      .catch(error => this.finishTask({ jobId, logId, error }))
+    this.execTask(executorHandler, ctx.request.body, logger)
+      .then(result => this.finishTask({ logger, jobId, logId, result }))
+      .catch(error => this.finishTask({ logger, jobId, logId, error }))
 
     ctx.status = 200
     ctx.body = { code: 200, msg: 'success run task' }
   }
 
-  private async execTask(executorHandler: string, executorParams: IExecutorParams) {
+  private async execTask(executorHandler: string, executorParams: IExecutorParams, logger: ExposeLogger) {
     const task = this.taskCacheList.get(executorHandler)
-    return task!(executorParams, this.logger)
+    return task!(logger, executorParams)
   }
 
-  private finishTask(options: { jobId: number, logId: number, result?: any, error?: Error }) {
-    const { jobId, logId, result, error } = options
+  private finishTask(options: { jobId: number, logId: number, result?: any, error?: Error, logger: ExposeLogger }) {
+    const { jobId, logId, result, error, logger } = options
     if (error) {
-      this.logger.error(error.message || error)
+      logger.error(error.message || error)
       this.callback({ logId, error })
     } else {
       this.callback({ logId, result })
     }
     this.runningTaskList.delete(jobId)
-    this.logger.info(`--- Job Task: ${jobId} is finished: ${logId} ---`)
+    logger.info(`--- Job Task: ${jobId} is finished: ${logId} ---`)
   }
 
   private callback(params: ICallbackType) {

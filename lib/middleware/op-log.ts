@@ -1,7 +1,9 @@
 import { Context, Next } from 'koa'
-import { ExposeLogger } from '../types'
+import { WLogger } from '../logger'
 
-export function opLogger(opLog: boolean, logger: ExposeLogger) {
+export function opLogger(opLog: boolean, loggerInst: WLogger) {
+  const logger = loggerInst.create({ isOpLog: true })
+
   return function exec(ctx: Context, next: Next) {
     if (opLog) {
       const { method, path, query, request: { body } } = ctx

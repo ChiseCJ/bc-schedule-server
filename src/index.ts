@@ -10,3 +10,8 @@ const schedule = new BcScheduleServer({
   }
 })
 schedule.registerTask(task)
+
+
+process.on('exit', function (a: any, b: any, c: any) {
+  console.log('Your process is exiting', a, b, c);
+});

@@ -40,13 +40,21 @@ export interface ISendResponseData {
   msg?: string
 }
 
-export type ITaskItem = (params: IExecutorParams, logger: ExposeLogger) => any
+export type ITaskItem = (logger: ExposeLogger, params: IExecutorParams) => any
 export type ITaskList = ITaskItem[]
 
 export interface IReadLogType {
   logId: number,
   fromLineNum: number
   logDateTim: number
+}
+
+export interface IReadResponse {
+  findFlag: boolean,
+  endFlag: boolean,
+  content?: string,
+  fromLineNum?: number,
+  lineNum?: number
 }
 
 export type ExposeLogger = Record<'info' | 'error', LeveledLogMethod>
