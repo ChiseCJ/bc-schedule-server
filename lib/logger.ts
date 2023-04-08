@@ -20,6 +20,9 @@ const formatOptions = {
   prod: [format.errors(), format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), logFormat]
 }
 
+// 目录结构：/logs/2023-05-01/123456.log
+const getFullFilename = (prefixPath: string, timestampe: number, logId: number) => path.resolve(prefixPath, `./${formatDate(timestampe)}-xxl-job/${logId}.log`)
+
 export class WLogger {
   options: ILoggerType
 
@@ -27,9 +30,9 @@ export class WLogger {
     this.options = options
   }
 
-  create(params: { fileName?: string, isOpLog?: boolean }) {
+  create(params: { logDateTime?: number, logId?: number, isOpLog?: boolean }) {
     const { logPath = 'logs' } = this.options
-    const { fileName, isOpLog = false } = params
+    const { isOpLog = false, logDateTime, logId } = params
 
     const logger = createLogger({
       format: format.combine(...formatOptions[isLocal ? 'local' : 'prod']),
@@ -41,16 +44,17 @@ export class WLogger {
     })
 
     if (isOpLog) {
+      // 运行日志
       const filename = path.resolve(logPath, `./%DATE%-xxl-job-op.log`)
       logger.add(new DailyRotateFile({
         filename,
         datePattern: `YYYY-MM-DD`,
-        zippedArchive: true,
       }))
-    } else if (!isLocal) {
-      const allFilename = path.resolve(logPath, `./${fileName}.log`)
+    } else if (!isLocal && logDateTime && logId) {
+      // 生产日志
+      const filename = getFullFilename(logPath, logDateTime, logId)
       logger.add(new transports.File({
-        filename: allFilename,
+        filename,
         handleExceptions: true,
       }))
     }
@@ -66,14 +70,14 @@ export const readLocalLogById = (loggerInstance: WLogger) => ({ logId, logDateTi
     }
 
     const { logPath = 'logs' } = loggerInstance.options
-    const logFile = path.resolve(logPath, `./${formatDate(logDateTim)}-xxl-job-${logId}.log`)
+    const filename = getFullFilename(logPath, logDateTim, logId)
 
-    if (!fs.existsSync(logFile)) {
+    if (!fs.existsSync(filename)) {
       resolve({ findFlag: false, endFlag: true })
       return
     }
 
-    const stream = fs.createReadStream(logFile)
+    const stream = fs.createReadStream(filename)
     const rl = readline.createInterface({ input: stream })
 
     let lineNum = 0

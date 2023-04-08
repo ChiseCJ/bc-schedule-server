@@ -1,11 +1,11 @@
 {
   "ext": "ts,js,json",
   "ignore": [
-    "dist/*",
     "node_modules/*"
   ],
   "watch": [
-    "src/*"
+    "src",
+    "dist"
   ],
   "quiet": true,
   "verbose": true,

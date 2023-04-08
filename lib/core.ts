@@ -3,7 +3,7 @@ import Koa, { Context, Next } from 'koa'
 import koaBody from 'koa-body'
 import Router from 'koa-router'
 import { IBcScheduleType, IExecutorParams, ICallbackType, ITaskItem, ITaskList, IReadLogType, ExposeLogger } from './types'
-import { isArray, getLocalIP, isFunction, formatDate, isObject, request } from './util'
+import { isArray, getLocalIP, isFunction, isObject, request } from './util'
 import { opLogger } from './middleware'
 import { WLogger, readLocalLogById } from './logger'
 
@@ -48,7 +48,7 @@ export class BcScheduleServer {
 
     if (this.taskCacheList) {
       for (const task of list) {
-        if (isFunction(task) && !this.taskCacheList.has(task.name)) {
+        if (isFunction(task) && task.name && !this.taskCacheList.has(task.name)) {
           this.taskCacheList.set(task.name, task)
           this.taskList.push(task.name)
         }
@@ -70,7 +70,7 @@ export class BcScheduleServer {
 
     this.app.listen(port, () => {
       const localIp = getLocalIP()
-      console.log('\x1b[3m\x1b[34m \nccLog ——> \x1b[0m', `Server running on http://127.0.0.1:${port}; http://${localIp}:${port}`)
+      console.log('\x1b[3m\x1b[34m \nccLog —>\x1b[0m', `Server running on\n  http://127.0.0.1:${port}\n  http://${localIp}:${port}`)
 
       const { callback } = this.options
       if (typeof callback === 'function') {
@@ -154,7 +154,7 @@ export class BcScheduleServer {
   private async taskHandle(ctx: Context) {
     const { jobId, logId, logDateTime, executorHandler } = ctx.request.body as IExecutorParams
     // 每次请求都生成一个新的 winston 实例
-    const logger = this.logInstance.create({ fileName: `${formatDate(logDateTime)}-xxl-job-${logId}` })
+    const logger = this.logInstance.create({ logDateTime, logId })
 
     logger.info(`--- Job Task: ${jobId} is running: ${logId} ---`)
     this.runningTaskList.add(jobId)
