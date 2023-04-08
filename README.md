@@ -26,14 +26,18 @@
   * 注册待调用的定时任务
   * 注意：不能是 ()=>{} 和 function(){} 方式
   */
+  const fn = (logger: ExposeLogger) => {
+    logger.info('# hahah')
+  }
   const registered =schedule.registerTask([
-    function fn1(logger, xxlJobParams) {
+    fn,
+    function fn2(logger, xxlJobParams) {
       logger.info('balabal')
     },
-    async function fn2(logger, xxlJobParams) {},
+    async function fn3(logger, xxlJobParams) {},
   ])
   // 返回已经注册的任务函数列表
-  console.log(registered) // [ 'test', 'testError' ]
+  console.log(registered) // [ 'fn', 'fn2', 'fn3' ]
   ```
 
 ### 配置参数
