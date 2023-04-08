@@ -32,6 +32,7 @@
     },
     async function fn2(logger, xxlJobParams) {},
   ])
+  // 返回已经注册的任务函数列表
   console.log(registered) // [ 'test', 'testError' ]
   ```
 
