@@ -21,7 +21,8 @@
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "dev": "nodemon src/index.ts",
+    "dev:js": "nodemon src/js/index.js",
+    "dev:ts": "nodemon src/ts/index.ts",
     "dev:lib": "cross-env NODE_ENV=development rollup -c build/rollup.config.js -w",
     "build": "rollup -c build/rollup.config.js",
     "check": "tsc --noEmit"

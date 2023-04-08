@@ -1,4 +1,4 @@
-import { BcScheduleServer } from '../dist';
+import { BcScheduleServer } from '../../dist';
 import { task } from './task';
 
 const schedule = new BcScheduleServer({
@@ -9,7 +9,7 @@ const schedule = new BcScheduleServer({
     // logPath: 'logs/abc'
   }
 })
-schedule.registerTask(task)
+console.log(schedule.registerTask(task));
 
 
 process.on('exit', function (a: any, b: any, c: any) {

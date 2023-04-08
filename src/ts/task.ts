@@ -1,4 +1,4 @@
-import { ExposeLogger, IExecutorParams } from '../dist';
+import { ExposeLogger, IExecutorParams } from '../../dist';
 import { sleep } from './util';
 
 async function test(logger: ExposeLogger, params: IExecutorParams) {
@@ -19,4 +19,4 @@ async function testError(logger: ExposeLogger) {
   throw new Error('a not find')
 }
 
-export const task = [test, testError]
+export const task = [test, testError, () => { }, function () {}]
