@@ -8,14 +8,18 @@ import DailyRotateFile from 'winston-daily-rotate-file'
 import { ExposeLogger, ILoggerType, IReadLogType, IReadResponse } from './types'
 import { isLocal, formatDate } from './util'
 
-const logFormat = format.printf(params => {
-  const { level, message, timestamp, stack } = params
-  return `${timestamp} [XXL-JOB] ${level}:${jsonStringify(message, (_, value: any) => ['bigint', 'symbol'].includes(typeof value) ? value.toString() : value)} ${stack || ''}`
+const logFormat = format.printf(info => {
+  const { timestamp, level, message, stack } = info
+  const msgStr = jsonStringify(message, (_, value: any) => ['bigint', 'symbol'].includes(typeof value) ? value.toString() : value)
+  if (stack) {
+    return `${timestamp} [XXL-JOB] ${level}:${stack || ''}`
+  }
+  return `${timestamp} [XXL-JOB] ${level}:${msgStr || ''}`
 })
 
 const formatOptions = {
-  local: [format.json(), format.errors(), format.colorize({ all: true }), format.simple()],
-  prod: [format.errors(), format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), logFormat]
+  local: [format.colorize({ all: true }), format.errors({ stack: true }), format.json(), format.splat(), format.simple()],
+  prod: [format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), format.errors({ stack: true }), format.splat(), logFormat]
 }
 
 // 目录结构：/logs/2023-05-01/123456.log
@@ -64,15 +68,14 @@ export class WLogger {
 export const readLocalLogById = (loggerInstance: WLogger) => ({ logId, logDateTim, fromLineNum }: IReadLogType) => {
   return new Promise<IReadResponse>(resolve => {
     if (isLocal) {
-      return resolve({ findFlag: true, endFlag: true, content: 'is local fake data', fromLineNum: 1, lineNum: 2 })
+      return resolve({ content: 'is local fake data', fromLineNum: 1, lineNum: 2, endFlag: true, })
     }
     // 按 logId 生成对立文件后，不在通过 running/finished 匹配 log 位置了
     const { logPath = 'logs' } = loggerInstance.options
     const filename = getFullFilename(logPath, logDateTim, logId)
 
     if (!fs.existsSync(filename)) {
-      resolve({ findFlag: false, endFlag: true })
-      return
+      return resolve({ content: `log not found, logId: ${logId}`, endFlag: true })
     }
 
     const stream = fs.createReadStream(filename)
@@ -82,16 +85,15 @@ export const readLocalLogById = (loggerInstance: WLogger) => ({ logId, logDateTi
     let content = ''
 
     rl.on('line', line => {
-      content += line
+      content += `${line}\n`
       lineNum += 1
     })
 
     rl.once('close', () => {
-      console.log('## close');
       if (content.length) {
-        resolve({ content, fromLineNum, lineNum, findFlag: true, endFlag: true })
+        resolve({ content, fromLineNum, lineNum, endFlag: true })
       } else {
-        resolve({ content: 'internal logs are not used', fromLineNum, lineNum, findFlag: false, endFlag: true })
+        resolve({ content: 'default text: internal logs are not used or no log output', fromLineNum, lineNum, endFlag: true })
       }
     })
   })

@@ -15,17 +15,15 @@ async function testAsync(logger: ExposeLogger, params: IExecutorParams) {
   logger.info(`${[1, 2, 3]} ${params.executorParams}`)
   await sleep(2000)
   logger.info(`balabala -- ${params.executorParams}`);
-  // 循环插入
-  // ['abc', 'bbb', 123, { c: 3 }].map((i: any) => logger.info)
-  // ['abc', 'bbb', 123, { c: 3 }].reduce(()=>{
-
-  // }, )
 }
 
 async function testError(logger: ExposeLogger) {
   await sleep(2000)
   logger.info('### testError')
-  throw new Error('a not find')
+  // throw new Error('a not find')
+  // a
 }
 
-export const task = [test, testAsync, testError, () => { }, function () { }]
+function noLogger() {}
+
+export const task = [test, testAsync, testError, () => { }, function () { }, noLogger]

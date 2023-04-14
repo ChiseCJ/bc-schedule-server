@@ -2,7 +2,7 @@
 import Koa, { Context, Next } from 'koa'
 import koaBody from 'koa-body'
 import Router from 'koa-router'
-import { IBcScheduleType, IExecutorParams, ICallbackType, ITaskItem, ITaskList, IReadLogType, ExposeLogger } from './types'
+import { IBcScheduleType, IExecutorParams, ICallbackType, ITaskItem, ITaskList, ExposeLogger } from './types'
 import { isArray, getLocalIP, isFunction, isObject, request } from './util'
 import { opLogger } from './middleware'
 import { WLogger, readLocalLogById } from './logger'
@@ -107,16 +107,11 @@ export class BcScheduleServer {
     // 执行日志
     this.router.post('/log', async (ctx: Context) => {
       const { body } = ctx.request
-      let resultContent = { logContent: 'local log is not used', fromLineNum: 1, toLineNum: 2, end: true }
+      let resultContent = { logContent: 'local log is not used', fromLineNum: 1, toLineNum: 1, end: true }
 
       if (body) {
-        const { logId } = body as IReadLogType
-        const { findFlag, endFlag, content, fromLineNum, lineNum } = await readLocalLogById(this.logInstance)(body)
-        if (!findFlag) {
-          resultContent = { logContent: `log not found, logId: ${logId}`, fromLineNum: 1, toLineNum: 2, end: false }
-        } else {
-          resultContent = { logContent: content || '', fromLineNum: fromLineNum || 1, toLineNum: lineNum || 2, end: endFlag }
-        }
+        const { endFlag, content, fromLineNum, lineNum } = await readLocalLogById(this.logInstance)(body)
+        resultContent = { logContent: content || '', fromLineNum: fromLineNum || 1, toLineNum: lineNum || 1, end: endFlag }
       }
 
       ctx.status = 200
@@ -173,7 +168,7 @@ export class BcScheduleServer {
   private finishTask(options: { jobId: number, logId: number, result?: any, error?: Error, logger: ExposeLogger }) {
     const { jobId, logId, result, error, logger } = options
     if (error) {
-      logger.error(error.message || error)
+      logger.error(error)
       this.callback({ logId, error })
     } else {
       this.callback({ logId, result })

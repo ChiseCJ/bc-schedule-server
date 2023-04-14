@@ -4,7 +4,10 @@
 ### 功能说明
   - 支持 xxl-job 心跳监测功能
   - 支持执行结果、异常捕获等内容回调给 xxl-job 后台
+    - 执行结果需要在任务函数内 return xxx 才能被接收（用于“执行备注”内查看）
+    - 异常错误会被捕获进 log 日志内
   - 支持执行 log 查看（需使用内部的 logger 函数）
+    - 默认按照 logs/YYYY-MM-DD/logId.log 目录结构存储
   - 暂不支持任务超时配置及单次任务的终止动作
 
 ### 其他
@@ -28,8 +31,11 @@
   */
   const fn = (logger: ExposeLogger) => {
     logger.info('# hahah')
+
+    // 返回的信息可在“执行备注”中查看
+    return 'change rows: 3'
   }
-  const registered =schedule.registerTask([
+  const registered = schedule.registerTask([
     fn,
     function fn2(logger, xxlJobParams) {
       logger.info('balabal')
@@ -39,6 +45,24 @@
   // 返回已经注册的任务函数列表
   console.log(registered) // [ 'fn', 'fn2', 'fn3' ]
   ```
+
+### logger 使用
+```
+// info:balabala
+logger.info('balabala')
+// info:{"extra":"","msg":"test info","other":1}
+logger.info({ msg: 'test info', other: 1 })
+// info:[1,2,3]
+logger.info([1, 2, 3])
+// info:"number -- 123"
+logger.info(`number -- %d`, 123)
+// info:"json -- {\"test\":\"balabala\"}"
+logger.info(`json -- %j`, { test: 'balabala' })
+// info:"string and object to string { a: 1 } And { b: 2 }"
+logger.info('string and object to string %s And %s', { a: 1 }, { b: 2 })
+// info:"more info abc | other text"
+logger.info(`more info %s | %s`, 'abc', 'other text', 'more...')
+```
 
 ### 配置参数
 ```

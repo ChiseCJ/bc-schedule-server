@@ -50,7 +50,6 @@ export interface IReadLogType {
 }
 
 export interface IReadResponse {
-  findFlag: boolean,
   endFlag: boolean,
   content?: string,
   fromLineNum?: number,
