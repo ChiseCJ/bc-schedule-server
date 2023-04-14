@@ -4,7 +4,7 @@
     "node_modules/*"
   ],
   "watch": [
-    "src",
+    "example",
     "dist"
   ],
   "quiet": true,
