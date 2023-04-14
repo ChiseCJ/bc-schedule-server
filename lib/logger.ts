@@ -8,8 +8,6 @@ import DailyRotateFile from 'winston-daily-rotate-file'
 import { ExposeLogger, ILoggerType, IReadLogType, IReadResponse } from './types'
 import { isLocal, formatDate } from './util'
 
-const MAX_LINE = 10
-
 const logFormat = format.printf(params => {
   const { level, message, timestamp, stack } = params
   return `${timestamp} [XXL-JOB] ${level}:${jsonStringify(message, (_, value: any) => ['bigint', 'symbol'].includes(typeof value) ? value.toString() : value)} ${stack || ''}`
@@ -68,7 +66,7 @@ export const readLocalLogById = (loggerInstance: WLogger) => ({ logId, logDateTi
     if (isLocal) {
       return resolve({ findFlag: true, endFlag: true, content: 'is local fake data', fromLineNum: 1, lineNum: 2 })
     }
-
+    // 按 logId 生成对立文件后，不在通过 running/finished 匹配 log 位置了
     const { logPath = 'logs' } = loggerInstance.options
     const filename = getFullFilename(logPath, logDateTim, logId)
 
@@ -82,34 +80,18 @@ export const readLocalLogById = (loggerInstance: WLogger) => ({ logId, logDateTi
 
     let lineNum = 0
     let content = ''
-    let findFlag = false
-    let endFlag = false
-
-    const start = new RegExp(`running: ${logId}`)
-    const end = new RegExp(`finished: ${logId}`)
 
     rl.on('line', line => {
-      if (lineNum > fromLineNum) lineNum = fromLineNum
-      if (start.test(line)) findFlag = true
-      if (findFlag) {
-        content += `${line}\n`
-        lineNum += 1
-      }
-      // 找到结尾，结束读取
-      if (end.test(line)) {
-        endFlag = true
-        rl.close()
-      }
-      // 连续读取>MAX_LINE还未找到结尾，结束读取
-      if (lineNum > (fromLineNum + MAX_LINE)) rl.close()
+      content += line
+      lineNum += 1
     })
 
     rl.once('close', () => {
-      // 没找到开头
-      if (!findFlag) {
-        resolve({ findFlag, endFlag: true })
-      } else if (endFlag) {
-        resolve({ content, fromLineNum, lineNum, findFlag, endFlag })
+      console.log('## close');
+      if (content.length) {
+        resolve({ content, fromLineNum, lineNum, findFlag: true, endFlag: true })
+      } else {
+        resolve({ content: 'internal logs are not used', fromLineNum, lineNum, findFlag: false, endFlag: true })
       }
     })
   })

@@ -14,7 +14,12 @@ async function testAsync(logger: ExposeLogger, params: IExecutorParams) {
   await sleep(2000)
   logger.info(`${[1, 2, 3]} ${params.executorParams}`)
   await sleep(2000)
-  logger.info(`balabala -- ${params.executorParams}`)
+  logger.info(`balabala -- ${params.executorParams}`);
+  // 循环插入
+  // ['abc', 'bbb', 123, { c: 3 }].map((i: any) => logger.info)
+  // ['abc', 'bbb', 123, { c: 3 }].reduce(()=>{
+
+  // }, )
 }
 
 async function testError(logger: ExposeLogger) {

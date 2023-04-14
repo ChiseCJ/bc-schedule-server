@@ -52,6 +52,24 @@
   route?: string, // api 地址前缀
   koaOptions?: any // new Koa() 本身对应的参数
 }
+
+// 基本使用方式
+import { BcScheduleServer } form 'bc-schedule-server'
+
+const schedule = new BcScheduleServer({ 
+  port: 9501,
+  scheduleCenterUrl: 'https://xxljob.xxx.com'
+})
+
+// 注册待调用的定时任务
+schedule.registerTask([
+  function fn1(logger, xxlJobParams) {
+    logger.info('balabal')
+    // logger 支持对象形式
+    logger.info({msg: 'heihei', params: {a:1, b:2}})
+  },
+  async function fn2(logger, xxlJobParams) {},
+])
 ```
 
 ### api接口信息

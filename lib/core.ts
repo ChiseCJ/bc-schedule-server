@@ -156,7 +156,6 @@ export class BcScheduleServer {
     // 每次请求都生成一个新的 winston 实例
     const logger = this.logInstance.create({ logDateTime, logId })
 
-    logger.info(`--- Job Task: ${jobId} is running: ${logId} ---`)
     this.runningTaskList.add(jobId)
     this.execTask(executorHandler, ctx.request.body, logger)
       .then(result => this.finishTask({ logger, jobId, logId, result }))
@@ -180,7 +179,6 @@ export class BcScheduleServer {
       this.callback({ logId, result })
     }
     this.runningTaskList.delete(jobId)
-    logger.info(`--- Job Task: ${jobId} is finished: ${logId} ---`)
   }
 
   private callback(params: ICallbackType) {
