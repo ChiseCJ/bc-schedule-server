@@ -1,6 +1,6 @@
 {
   "name": "bc-schedule-server",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "xxl-job koa server",
   "keywords": [
     "node",
