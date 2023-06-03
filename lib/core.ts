@@ -2,7 +2,7 @@
 import Koa, { Context, Next } from 'koa'
 import koaBody from 'koa-body'
 import Router from 'koa-router'
-import { IBcScheduleType, IExecutorParams, ICallbackType, ITaskItem, ITaskList, ExposeLogger } from './types'
+import { IBcScheduleType, IExecutorParams, ICallbackType, ITaskItem, ITaskList, ExposeLogger, ITaskOption } from './types'
 import { isArray, getLocalIP, isFunction, isObject, request } from './util'
 import { opLogger } from './middleware'
 import { WLogger, readLocalLogById } from './logger'
@@ -21,6 +21,7 @@ export class BcScheduleServer {
   taskList!: string[]
   private runningTaskList!: Set<number>
   private taskCacheList!: Map<string, ITaskItem>
+  private taskOption?: ITaskOption
   private options!: IBcScheduleType
   private logInstance!: WLogger
 
@@ -34,6 +35,7 @@ export class BcScheduleServer {
     this.taskCacheList = new Map()
     this.taskList = []
     this.runningTaskList = new Set()
+    this.taskOption = { excludeJobId: [] }
 
     this.logInstance = new WLogger(this.options.logOption || {})
     this.start()
@@ -43,8 +45,9 @@ export class BcScheduleServer {
    * @expose 注册定时任务
    * @return 已经注册的任务名称
    */
-  registerTask(list: ITaskList): string[] {
+  registerTask(list: ITaskList, option?: ITaskOption): string[] {
     if (!isArray(list)) return this.taskList
+    if (isObject(option)) this.taskOption = option
 
     if (this.taskCacheList) {
       for (const task of list) {
@@ -119,8 +122,17 @@ export class BcScheduleServer {
     })
   }
 
-  private hasTask(jobId: number) {
-    return this.runningTaskList.has(jobId)
+  private hasTask(jobId: number, executorHandler?: string) {
+    let result = this.runningTaskList.has(jobId)
+    if (executorHandler) {
+      if (typeof this.taskOption?.excludeJobId === 'boolean' && this.taskOption.excludeJobId) {
+        result = false
+      } else if (isArray(this.taskOption?.excludeJobId) && (this.taskOption?.excludeJobId as string[]).includes(executorHandler)) {
+        result = false
+      }
+    }
+
+    return result
   }
 
   /**
@@ -134,7 +146,7 @@ export class BcScheduleServer {
       if (!this.taskList.includes(executorHandler)) {
         ctx.status = 200
         ctx.body = { code: 500, msg: `error: task ${executorHandler} is not register` }
-      } else if (this.hasTask(jobId)) {
+      } else if (this.hasTask(jobId, executorHandler)) {
         ctx.status = 200
         ctx.body = { code: 500, msg: `jobId:${jobId} is running` }
       } else {

@@ -18,7 +18,7 @@ async function testAsync(logger: ExposeLogger, params: IExecutorParams) {
 }
 
 async function testError(logger: ExposeLogger) {
-  await sleep(2000)
+  await sleep(3000)
   logger.info('### testError')
   // throw new Error('a not find')
   // a

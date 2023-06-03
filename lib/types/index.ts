@@ -42,6 +42,7 @@ export interface ISendResponseData {
 
 export type ITaskItem = (logger: ExposeLogger, params: IExecutorParams) => any
 export type ITaskList = ITaskItem[]
+export type ITaskOption = { excludeJobId?: true | string[] }
 
 export interface IReadLogType {
   logId: number,

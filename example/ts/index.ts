@@ -10,6 +10,8 @@ const schedule = new BcScheduleServer({
   }
 })
 console.log(schedule.registerTask(task));
+// console.log(schedule.registerTask(task, { excludeJobId: ['testAsync'] }));
+// console.log(schedule.registerTask(task, { excludeJobId: true }));
 
 
 process.on('exit', function (a: any, b: any, c: any) {
