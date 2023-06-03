@@ -8,6 +8,7 @@
     - 异常错误会被捕获进 log 日志内
   - 支持执行 log 查看（需使用内部的 logger 函数）
     - 默认按照 logs/YYYY-MM-DD/logId.log 目录结构存储
+  - 支持跳过执行任务限制
   - 暂不支持任务超时配置及单次任务的终止动作
 
 ### 其他
@@ -66,6 +67,7 @@ logger.info(`more info %s | %s`, 'abc', 'other text', 'more...')
 
 ### 配置参数
 ```
+// BcScheduleServer 配置
 {
   port: number, // 服务监听端口
   scheduleCenterUrl: string, // xxl-job 任务执行后的回调域名
@@ -76,6 +78,10 @@ logger.info(`more info %s | %s`, 'abc', 'other text', 'more...')
   route?: string, // api 地址前缀
   koaOptions?: any // new Koa() 本身对应的参数
 }
+// registerTask 配置
+schedule.registerTask([...tasks], {
+  excludeJobId: true | string[] // 配置 true 所有任务都不加执行限制；string[] 只对配置了的任务明跳过限制
+})
 
 // 基本使用方式
 import { BcScheduleServer } form 'bc-schedule-server'
