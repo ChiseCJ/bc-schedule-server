@@ -45,15 +45,15 @@ export type ITaskList = ITaskItem[]
 export type ITaskOption = { excludeJobId?: true | string[] }
 
 export interface IReadLogType {
-  logId: number,
+  logId: number
   fromLineNum: number
   logDateTim: number
 }
 
 export interface IReadResponse {
-  endFlag: boolean,
-  content?: string,
-  fromLineNum?: number,
+  endFlag: boolean
+  content?: string
+  fromLineNum?: number
   lineNum?: number
 }
 

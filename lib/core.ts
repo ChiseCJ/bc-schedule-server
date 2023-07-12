@@ -107,14 +107,17 @@ export class BcScheduleServer {
       ctx.status = 200
       ctx.body = { code: 500, msg: `not support kill jobId: ${jobId}` }
     })
-    // 执行日志
+    /**
+     * 执行日志
+     * @desc xxl 当 fromLineNum > toLineNum 时回自动停止读取
+     */
     this.router.post('/log', async (ctx: Context) => {
       const { body } = ctx.request
-      let resultContent = { logContent: 'local log is not used', fromLineNum: 1, toLineNum: 1, end: true }
+      let resultContent = { logContent: 'local log is not used', fromLineNum: 1, toLineNum: 1, isEnd: true }
 
       if (body) {
         const { endFlag, content, fromLineNum, lineNum } = await readLocalLogById(this.logInstance)(body)
-        resultContent = { logContent: content || '', fromLineNum: fromLineNum || 1, toLineNum: lineNum || 1, end: endFlag }
+        resultContent = { logContent: content || '', fromLineNum: fromLineNum || 1, toLineNum: lineNum || 1, isEnd: endFlag }
       }
 
       ctx.status = 200

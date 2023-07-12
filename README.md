@@ -7,7 +7,7 @@
     - 执行结果需要在任务函数内 return xxx 才能被接收（用于“执行备注”内查看）
     - 异常错误会被捕获进 log 日志内
   - 支持执行 log 查看（需使用内部的 logger 函数）
-    - 默认按照 logs/YYYY-MM-DD/logId.log 目录结构存储
+    - 默认按照 logs/YYYY-MM-DD-xxl-job.log 目录结构存储
   - 支持跳过执行任务限制
   - 暂不支持任务超时配置及单次任务的终止动作
 

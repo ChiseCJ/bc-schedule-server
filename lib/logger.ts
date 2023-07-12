@@ -9,21 +9,18 @@ import { ExposeLogger, ILoggerType, IReadLogType, IReadResponse } from './types'
 import { isLocal, formatDate } from './util'
 
 const logFormat = format.printf(info => {
-  const { timestamp, level, message, stack } = info
+  const { timestamp, level, message, stack, logId = 0 } = info
   const msgStr = jsonStringify(message, (_, value: any) => ['bigint', 'symbol'].includes(typeof value) ? value.toString() : value)
   if (stack) {
-    return `${timestamp} [XXL-JOB] ${level}:${stack || ''}`
+    return `${timestamp} [XXL-JOB-${logId}] ${level}:${stack || ''}`
   }
-  return `${timestamp} [XXL-JOB] ${level}:${msgStr || ''}`
+  return `${timestamp} [XXL-JOB-${logId}] ${level}:${msgStr || ''}`
 })
 
 const formatOptions = {
   local: [format.colorize({ all: true }), format.errors({ stack: true }), format.json(), format.splat(), format.simple()],
   prod: [format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), format.errors({ stack: true }), format.splat(), logFormat]
 }
-
-// 目录结构：/logs/2023-05-01/123456.log
-const getFullFilename = (prefixPath: string, timestampe: number, logId: number) => path.resolve(prefixPath, `./${formatDate(timestampe)}-xxl-job/${logId}.log`)
 
 export class WLogger {
   options: ILoggerType
@@ -45,23 +42,33 @@ export class WLogger {
       exitOnError: false
     })
 
+    // 添加 log 动作
     if (isOpLog) {
       // 运行日志
-      const filename = path.resolve(logPath, `./%DATE%-xxl-job-op.log`)
+      const filename = path.resolve(logPath, `./%DATE%-xxl-job-operation.log`)
       logger.add(new DailyRotateFile({
         filename,
         datePattern: `YYYY-MM-DD`,
       }))
-    } else if (!isLocal && logDateTime && logId) {
+    }
+    if (!isLocal && logDateTime && logId) {
       // 生产日志
-      const filename = getFullFilename(logPath, logDateTime, logId)
-      logger.add(new transports.File({
+      const filename = path.resolve(logPath, `./%DATE%-xxl-job.log`)
+      logger.add(new DailyRotateFile({
         filename,
-        handleExceptions: true,
+        datePattern: `YYYY-MM-DD`,
       }))
     }
 
-    return { info: logger.info.bind(logger), error: logger.error.bind(logger) } as ExposeLogger
+    return {
+      info: (...params) => {
+        params.push({ logId: logId || 0 })
+        return logger.info.apply(logger, params as any)
+      }, error: (...params) => {
+        params.push({ logId: logId || 0 })
+        return logger.error.apply(logger, params as any)
+      }
+    } as ExposeLogger
   }
 }
 
@@ -70,30 +77,31 @@ export const readLocalLogById = (loggerInstance: WLogger) => ({ logId, logDateTi
     if (isLocal) {
       return resolve({ content: 'is local fake data', fromLineNum: 1, lineNum: 2, endFlag: true, })
     }
-    // 按 logId 生成对立文件后，不在通过 running/finished 匹配 log 位置了
     const { logPath = 'logs' } = loggerInstance.options
-    const filename = getFullFilename(logPath, logDateTim, logId)
+    const filename = path.resolve(logPath, `./${formatDate(logDateTim)}-xxl-job.log`)
 
     if (!fs.existsSync(filename)) {
-      return resolve({ content: `log not found, logId: ${logId}`, endFlag: true })
+      return resolve({ content: `log file not found, logId: ${logId}`, lineNum: fromLineNum - 1, endFlag: true })
     }
 
     const stream = fs.createReadStream(filename)
     const rl = readline.createInterface({ input: stream })
 
-    let lineNum = 0
     let content = ''
+    let lineNum = 0
+    const pattern = new RegExp(`\\s\\[XXL-JOB-${logId}\\]\\s`)
 
     rl.on('line', line => {
-      content += `${line}\n`
       lineNum += 1
+      if (pattern.test(line)) {
+        content += `${line}\n`
+      }
     })
-
     rl.once('close', () => {
       if (content.length) {
         resolve({ content, fromLineNum, lineNum, endFlag: true })
       } else {
-        resolve({ content: 'default text: internal logs are not used or no log output', fromLineNum, lineNum, endFlag: true })
+        resolve({ content: 'default text: internal logs are not used or no log output', fromLineNum, lineNum: 1, endFlag: true })
       }
     })
   })
