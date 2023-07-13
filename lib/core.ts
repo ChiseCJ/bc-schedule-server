@@ -4,7 +4,7 @@ import koaBody from 'koa-body'
 import Router from 'koa-router'
 import { IBcScheduleType, IExecutorParams, ICallbackType, ITaskItem, ITaskList, ExposeLogger, ITaskOption } from './types'
 import { isArray, getLocalIP, isFunction, isObject, request } from './util'
-import { opLogger } from './middleware'
+import { opLogger, errorCapturer } from './middleware'
 import { WLogger, readLocalLogById } from './logger'
 
 const defaultOptions: Omit<IBcScheduleType, 'port' | 'scheduleCenterUrl'> = {
@@ -36,8 +36,9 @@ export class BcScheduleServer {
     this.taskList = []
     this.runningTaskList = new Set()
     this.taskOption = { excludeJobId: [] }
-
-    this.logInstance = new WLogger(this.options.logOption || {})
+    // 这里强制 opLog=false 不走生成 opLog 逻辑
+    this.logInstance = new WLogger(this.options.logOption!, 'production')
+    errorCapturer(this.logInstance)
     this.start()
   }
 
@@ -83,9 +84,8 @@ export class BcScheduleServer {
   }
 
   private expendAndMiddleware(app: Koa) {
-    const { opLog = false } = this.options.logOption!
     app.use(koaBody())
-    app.use(opLogger(opLog, this.logInstance))
+    app.use(opLogger(this.options.logOption!))
   }
 
   private addRoutes() {
@@ -162,9 +162,9 @@ export class BcScheduleServer {
   }
 
   private async taskHandle(ctx: Context) {
-    const { jobId, logId, logDateTime, executorHandler } = ctx.request.body as IExecutorParams
-    // 每次请求都生成一个新的 winston 实例
-    const logger = this.logInstance.create({ logDateTime, logId })
+    const { jobId, logId, executorHandler } = ctx.request.body as IExecutorParams
+    // logger 绑定当前的 ctx
+    const logger = this.logInstance.create(ctx)
 
     this.runningTaskList.add(jobId)
     this.execTask(executorHandler, ctx.request.body, logger)

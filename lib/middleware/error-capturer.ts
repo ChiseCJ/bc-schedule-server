@@ -1,9 +1,11 @@
-export function errorCapturer() {
-  process.on('uncaughtException', (error: any) => {
-    console.error('uncaughtException:', error)
-  })
+import { WLogger } from "../logger"
 
-  process.on('unhandledRejection', (reason: any, promise) => {
-    console.error('unhandledRejection:', promise, 'reason:', reason)
+export function errorCapturer(logInstance: WLogger) {
+  const logger = logInstance.create()
+  process.on('uncaughtException', (error: any) => {
+    logger.error(error, { errorType: 'uncaughtException' })
+  })
+  process.on('unhandledRejection', (reason: any) => {
+    logger.error(reason, { errorType: 'unhandledRejection' })
   })
 }

@@ -3,18 +3,18 @@ import path from 'path'
 import fs from 'fs'
 import readline from 'readline'
 import jsonStringify from 'safe-stable-stringify'
-import { createLogger, format, transports } from 'winston'
+import { Logger, createLogger, format, transports } from 'winston'
 import DailyRotateFile from 'winston-daily-rotate-file'
 import { ExposeLogger, ILoggerType, IReadLogType, IReadResponse } from './types'
 import { isLocal, formatDate } from './util'
 
 const logFormat = format.printf(info => {
-  const { timestamp, level, message, stack, logId = 0 } = info
+  const { timestamp, level, message, stack, errorType, jobId = 0, logId = 0 } = info
   const msgStr = jsonStringify(message, (_, value: any) => ['bigint', 'symbol'].includes(typeof value) ? value.toString() : value)
   if (stack) {
-    return `${timestamp} [XXL-JOB-${logId}] ${level}:${stack || ''}`
+    return `${timestamp} [XXL-JOB-${jobId}-${logId}] ${level}:${errorType ? `${errorType}-` : ''}${stack || ''}`
   }
-  return `${timestamp} [XXL-JOB-${logId}] ${level}:${msgStr || ''}`
+  return `${timestamp} [XXL-JOB-${jobId}-${logId}] ${level}:${msgStr || ''}`
 })
 
 const formatOptions = {
@@ -24,15 +24,15 @@ const formatOptions = {
 
 export class WLogger {
   options: ILoggerType
+  logger: Logger
 
-  constructor(options: ILoggerType) {
-    this.options = options
+  constructor(options: ILoggerType, type: 'request' | 'production') {
+    this.options = options || {}
+    this.logger = this.genInstance(type)
   }
 
-  create(params: { logDateTime?: number, logId?: number, isOpLog?: boolean }) {
-    const { logPath = 'logs' } = this.options
-    const { isOpLog = false, logDateTime, logId } = params
-
+  private genInstance(type: 'request' | 'production') {
+    const { logPath = 'logs', opLog = false } = this.options
     const logger = createLogger({
       format: format.combine(...formatOptions[isLocal ? 'local' : 'prod']),
       transports: [
@@ -42,16 +42,14 @@ export class WLogger {
       exitOnError: false
     })
 
-    // 添加 log 动作
-    if (isOpLog) {
+    if (!isLocal && type === 'request' && opLog) {
       // 运行日志
       const filename = path.resolve(logPath, `./%DATE%-xxl-job-operation.log`)
       logger.add(new DailyRotateFile({
         filename,
         datePattern: `YYYY-MM-DD`,
       }))
-    }
-    if (!isLocal && logDateTime && logId) {
+    } else if (!isLocal && type === 'production') {
       // 生产日志
       const filename = path.resolve(logPath, `./%DATE%-xxl-job.log`)
       logger.add(new DailyRotateFile({
@@ -60,24 +58,36 @@ export class WLogger {
       }))
     }
 
+    return logger
+  }
+
+  create(ctx?: any) {
+    let jobId = 0
+    let logId = 0
+    try {
+      const { request: { body } } = ctx || { request: {} }
+      jobId = body?.jobId || 0
+      logId = body?.logId || 0
+    } catch (error) { }
+
     return {
       info: (...params) => {
-        params.push({ logId: logId || 0 })
-        return logger.info.apply(logger, params as any)
+        params.push({ jobId, logId })
+        return this.logger.info.apply(this.logger, params as any)
       }, error: (...params) => {
-        params.push({ logId: logId || 0 })
-        return logger.error.apply(logger, params as any)
+        params.push({ jobId, logId })
+        return this.logger.error.apply(this.logger, params as any)
       }
     } as ExposeLogger
   }
 }
 
-export const readLocalLogById = (loggerInstance: WLogger) => ({ logId, logDateTim, fromLineNum }: IReadLogType) => {
+export const readLocalLogById = (logInstance: WLogger) => ({ logId, logDateTim, fromLineNum }: IReadLogType) => {
   return new Promise<IReadResponse>(resolve => {
     if (isLocal) {
       return resolve({ content: 'is local fake data', fromLineNum: 1, lineNum: 2, endFlag: true, })
     }
-    const { logPath = 'logs' } = loggerInstance.options
+    const { logPath = 'logs' } = logInstance.options
     const filename = path.resolve(logPath, `./${formatDate(logDateTim)}-xxl-job.log`)
 
     if (!fs.existsSync(filename)) {
@@ -89,11 +99,22 @@ export const readLocalLogById = (loggerInstance: WLogger) => ({ logId, logDateTi
 
     let content = ''
     let lineNum = 0
-    const pattern = new RegExp(`\\s\\[XXL-JOB-${logId}\\]\\s`)
+    let errorContent = false
+    const defaultPattern = new RegExp(/\s\[XXL-JOB-\d+-\d+\]\s/)
+    const logPattern = new RegExp(`\\s\\[XXL-JOB-\\d*-${logId}\\]\\s`)
+    const unhandlePattern = new RegExp(/\s\[XXL-JOB-0-0\]\s/)
+    const errorPattern = new RegExp(/\s*at\s+/)
 
     rl.on('line', line => {
       lineNum += 1
-      if (pattern.test(line)) {
+      if (logPattern.test(line)) {
+        content += `${line}\n`
+        errorContent = true
+      } else if (defaultPattern.test(line) && !unhandlePattern.test(line)) {
+        errorContent = false
+      }
+
+      if (errorContent && (errorPattern.test(line) || unhandlePattern.test(line))) {
         content += `${line}\n`
       }
     })
