@@ -96,7 +96,7 @@ export class BcScheduleServer {
     })
     // 空闲心跳监测
     this.router.post('/idleBeat', (ctx: Context) => {
-      const { jobId } = ctx.request?.body || { jobId: -1 }
+      const { jobId } = ctx.request.body || { jobId: -1 }
       ctx.status = 200
       ctx.body = this.hasTask(jobId) ? { code: 500, msg: `jobId:${jobId} is running` } : { code: 200, msg: 'success' }
     })
