@@ -74,6 +74,7 @@ export class WLogger {
     return {
       info: (...params) => {
         params.push({ jobId, logId })
+        // todo return this.logger.info(params)
         // eslint-disable-next-line prefer-spread
         return this.logger.info.apply(this.logger, params as any)
       }, error: (...params) => {
