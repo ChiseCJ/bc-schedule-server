@@ -68,14 +68,17 @@ export class WLogger {
       const { request: { body } } = ctx || { request: {} }
       jobId = body?.jobId || 0
       logId = body?.logId || 0
+      // eslint-disable-next-line no-empty
     } catch (error) { }
 
     return {
       info: (...params) => {
         params.push({ jobId, logId })
+        // eslint-disable-next-line prefer-spread
         return this.logger.info.apply(this.logger, params as any)
       }, error: (...params) => {
         params.push({ jobId, logId })
+        // eslint-disable-next-line prefer-spread
         return this.logger.error.apply(this.logger, params as any)
       }
     } as ExposeLogger

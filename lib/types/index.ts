@@ -11,7 +11,7 @@ export interface IBcScheduleType {
   scheduleCenterUrl: string
   route?: string
   koaOptions?: any
-  callback?: (port: number) => {}
+  callback?: (port: number) => any
 }
 
 export interface IExecutorParams {
