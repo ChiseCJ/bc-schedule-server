@@ -1,4 +1,5 @@
 import { LeveledLogMethod } from 'winston'
+import koa from 'koa'
 
 export interface ILoggerType {
   opLog?: boolean
@@ -11,6 +12,7 @@ export interface IBcScheduleType {
   scheduleCenterUrl: string
   route?: string
   koaOptions?: any
+  extraMiddlewares?: (app: koa) => void
   callback?: (port: number) => any
 }
 

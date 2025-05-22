@@ -62,12 +62,12 @@ export class BcScheduleServer {
   }
 
   private start() {
-    const { port, route, koaOptions = {} } = this.options
+    const { port, route, koaOptions = {}, extraMiddlewares } = this.options
 
     this.app = new Koa(koaOptions)
     this.router = new Router({ prefix: route })
 
-    this.expendAndMiddleware(this.app)
+    this.expendAndMiddleware(this.app, extraMiddlewares)
 
     this.addRoutes()
     this.app.use(this.router.routes()).use(this.router.allowedMethods())
@@ -83,9 +83,11 @@ export class BcScheduleServer {
     })
   }
 
-  private expendAndMiddleware(app: Koa) {
+  private expendAndMiddleware(app: Koa, extraMiddlewares: any) {
     app.use(koaBody())
     app.use(opLogger(this.options.logOption!))
+
+    if (typeof extraMiddlewares === 'function') extraMiddlewares(app)
   }
 
   private addRoutes() {
